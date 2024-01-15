@@ -197,7 +197,7 @@ const HomeScreen = () => {
   return (
     <SafeAreaView style={tw.style("flex-1 mt-6")}>
       <View style={tw.style("flex-row items-center justify-between px-5")}>
-        <TouchableOpacity onPress={logout}>
+        <TouchableOpacity onPress={() => navigation.navigate("User") } >
           <Image
             style={tw.style("h-10 w-10 rounded-full")}
             source={{
