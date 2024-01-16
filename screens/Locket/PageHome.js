@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  View,
   StyleSheet,
   Text,
   Dimensions,
@@ -8,16 +7,26 @@ import {
   Pressable,
   TouchableOpacity,
 } from "react-native";
+import { Center, View } from "native-base";
+import { useNavigation } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Camera, CameraType } from "expo-camera";
 import * as MediaLibrary from "expo-media-library";
 import { images } from "../../assets/images/index";
-// import { useNavigation } from "@react-navigation/native";
 import { Snackbar, Provider as PaperProvider } from "react-native-paper";
+import tw from "tailwind-react-native-classnames";
+import {
+  MaterialIcons,
+  Ionicons,
+  FontAwesome5,
+  Fontisto,
+} from "@expo/vector-icons";
 
 const widthScreen = Dimensions.get("window").width;
 const heightScreen = Dimensions.get("window").height;
 
 const PageHome = ({ onPressed }) => {
+  const navigation = useNavigation();
   const [hasCameraPermission, setHasCameraPermission] = useState(null);
   const [image, setImage] = useState(null);
   const [type, setType] = useState(Camera.Constants.Type.back);
@@ -52,7 +61,7 @@ const PageHome = ({ onPressed }) => {
       try {
         await MediaLibrary.createAssetAsync(image);
         setImage(null);
-        setSnackbarVisible(true)
+        setSnackbarVisible(true);
       } catch (error) {
         console.log(error);
       }
@@ -66,7 +75,12 @@ const PageHome = ({ onPressed }) => {
   const renderCamera = () => {
     return (
       <View>
-        <View style={styles.camera}>
+        <View
+          borderRadius={60}
+          overflow={"hidden"}
+          w={widthScreen}
+          h={widthScreen}
+        >
           <Camera
             style={{ flex: 1 }}
             type={type}
@@ -75,7 +89,7 @@ const PageHome = ({ onPressed }) => {
           ></Camera>
         </View>
         {/* control */}
-        <View className="flex-row justify-around items-center mt-8">
+        <View flexDirection={"row"} justifyContent={"space-around"} alignItems={"center"} mt={8} >
           {/* flash */}
           <TouchableOpacity
             onPress={() => {
@@ -86,22 +100,21 @@ const PageHome = ({ onPressed }) => {
               );
             }}
           >
-            <Image
-              source={images.flash}
-              className="w-[40px] h-[40px]"
-              style={{
-                tintColor:
-                  flash === Camera.Constants.FlashMode.off ? "white" : "yellow",
-              }}
-            />
+            <Ionicons name={flash === Camera.Constants.FlashMode.off ? "flash-off-outline" : "flash-outline"} size={36} color="#FF5864" />
+           
           </TouchableOpacity>
           {/* take photo */}
           <TouchableOpacity
-            className="border-[3px] border-orange-400 rounded-full p-2"
             onPress={takePicture}
           >
-            <View className="w-[60px] h-[60px] rounded-full bg-white" />
+                      <View p={2} w={82} h={82} justifyContent={"center"} alignItems={"center"} borderRadius={50} borderWidth={3} borderColor={"#e63946"}>
+                        <View borderRadius={50} w={16} h={16} justifyItems={"center"} alignSelf={"center"} bg={"#FF5864"}>
+
+                        </View>
+                      </View>
+
           </TouchableOpacity>
+
           {/* type camera */}
           <TouchableOpacity
             className=""
@@ -111,11 +124,7 @@ const PageHome = ({ onPressed }) => {
               );
             }}
           >
-            <Image
-              source={images.reload}
-              className="w-[40px] h-[40px]"
-              style={{ tintColor: "white" }}
-            />
+            <MaterialIcons name="loop" size={36} color="#FF5864" />
           </TouchableOpacity>
         </View>
       </View>
@@ -170,48 +179,39 @@ const PageHome = ({ onPressed }) => {
 
   return (
     <PaperProvider>
-      <View className="flex-1  bg-zinc-900 ">
-      {/* top */}
-      <View
-        className="flex-row justify-between px-7 mt-3 items-center"
-        style={{ height: heightScreen / 17 }}
-      >
-        <Pressable className="bg-zinc-600 p-2 rounded-full ">
-          <Image
-            source={images.users}
-            className="w-[30px] h-[30px]"
-            style={{ tintColor: "white" }}
-          />
-        </Pressable>
-        <Pressable className="bg-zinc-600 p-2 rounded-full ">
-          <Image
-            source={images.message}
-            className="w-[30px] h-[30px]"
-            style={{ tintColor: "white" }}
-          />
-        </Pressable>
-      </View>
-      {/* camera */}
-      <View>{!image ? renderCamera() : renderImage()}</View>
-      {/* bottom */}
-      <View className="mt-7">
-        <Pressable className="justify-center items-center" onPress={onPressed}>
-          <Text className="text-2xl font-semibold text-white">History</Text>
-          <Image
-            source={images.down}
-            className="w-[40px] h-[40px] mt-2"
-            style={{ tintColor: "white" }}
-          />
-        </Pressable>
-      </View>
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
-        duration={Snackbar.DURATION_SHORT} // You can adjust the duration as needed
-      >
-        Image saved successfully!
-      </Snackbar>
-    </View>
+      <SafeAreaView style={tw.style("flex-1 ")}>
+        <View style={tw.style("flex-row items-center justify-between px-5")}>
+          <TouchableOpacity onPress={() => navigation.navigate("User")}>
+            <FontAwesome5 name="user-edit" size={28} color="#FF5864" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate("Home")}>
+            <FontAwesome5 name="images" size={40} color="#FF5864" />
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => navigation.navigate("Chat")}>
+            <Ionicons name="chatbubbles-sharp" size={30} color="#FF5864" />
+          </TouchableOpacity>
+        </View>
+        {/* camera */}
+        <View shadow={9}  mt={20}>{!image ? renderCamera() : renderImage()}</View>
+        {/* bottom */}
+          <TouchableOpacity             onPress={onPressed}>
+          <View mt={12} justifyContent={"center"} alignItems={"center"}>
+
+            <Text style={{color:"#e63946",fontSize:24,fontWeight:"600"}}>History</Text>
+            <Fontisto name="angle-dobule-down" size={24} color="#FF5864" />
+            </View>
+
+          </TouchableOpacity>
+        
+        <Snackbar
+          visible={snackbarVisible}
+          onDismiss={() => setSnackbarVisible(false)}
+          duration={Snackbar.DURATION_SHORT} // You can adjust the duration as needed
+        >
+          Image saved successfully!
+        </Snackbar>
+      </SafeAreaView>
     </PaperProvider>
   );
 };

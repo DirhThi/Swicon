@@ -1,16 +1,27 @@
 import React from "react";
 import {
-  View,
   StyleSheet,
   Image,
   Dimensions,
   Text,
   FlatList,
   Pressable,
+  TouchableOpacity,
 } from "react-native";
+import { Center, View } from "native-base";
 import { images } from "../../assets/images";
 import PagerView from "react-native-pager-view";
-
+import { SafeAreaView } from "react-native-safe-area-context";
+import tw from "tailwind-react-native-classnames";
+import {
+  MaterialIcons,
+  Ionicons,
+  FontAwesome5,
+  Fontisto,
+  Entypo
+} from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { Title } from "react-native-paper";
 const widthScreen = Dimensions.get("window").width;
 const heightScreen = Dimensions.get("window").height;
 
@@ -50,32 +61,31 @@ const data = [
 ];
 
 const PageImage = ({ backPagePress }) => {
+  const navigation = useNavigation();
+
   return (
-    <View className="flex-1 bg-zinc-900 justify-between">
+    <SafeAreaView style={tw.style("flex-1 ")}>
+        <View style={tw.style("flex-row items-center justify-between px-5")}>
+          <TouchableOpacity onPress={backPagePress}>
+          <FontAwesome5 name="chevron-up"  size={28} color="#FF5864" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate("Home")}>
+            <FontAwesome5 name="images" size={40} color="#FF5864" />
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => navigation.navigate("Chat")}>
+          <Ionicons name="people-circle-outline" size={34} color="#FF5864" />
+          </TouchableOpacity>
+        </View>
+    <View flex={1}   width= {widthScreen} height= {widthScreen} justifyContent={"space-between"} >
       {/* top bar */}
-      <View
-        className="flex-row justify-between px-7 pt-3"
-        style={{ height: heightScreen / 17 }}
-      >
-        <Pressable onPress={backPagePress}>
-          <Image
-            source={images.up}
-            className="w-[30px] h-[30px]"
-            style={{ tintColor: "white" }}
-          />
-        </Pressable>
-        <Text className="text-white text-lg">All Image</Text>
-        <Image
-          source={images.more}
-          className="w-[30px] h-[30px]"
-          style={{ tintColor: "white" }}
-        />
-      </View>
+     
 
       <PagerView
         style={{ flex: 1 }}
         scrollEnabled={true}
         orientation="vertical"
+        width= {widthScreen} height= {widthScreen}
       >
         {data.map((item) => (
           <View
@@ -89,33 +99,35 @@ const PageImage = ({ backPagePress }) => {
                 alignItems: "center",
                 justifyContent: "center",
               }}
-              className="relative p-1"
+              
             >
               <Image
                 source={{ uri: item.image }}
                 style={{
+                  borderRadius:20,
                   flex: 1,
-                  width: "100%",
-                  height: "100%",
-                  resizeMode: "cover",
+                  width: widthScreen,
+                  height: widthScreen,
+                  
                 }}
-                className="rounded-3xl"
               />
-              <View className="bg-zinc-900 opacity-80 mt-5 p-2 px-4 rounded-3xl justify-center items-center absolute bottom-3">
+              
+            </View>
+            <View background={"gray.400"} opacity={80} mt={2} p={2} borderRadius={20} justifyContent={"center"} justifyItems={"center"}
+              >
                 {item.title && (
                   <Text className="text-white text-lg font-semibold">
                     {item.title}
                   </Text>
                 )}
               </View>
-            </View>
-            <View className="bg-zinc-700 mt-5 p-2 px-4 rounded-3xl justify-center items-center">
+            <View >
               <Text className="text-white text-2xl font-semibold">
                 {item.name}
               </Text>
             </View>
           </View>
-        ))}
+       ))} 
       </PagerView>
 
       {/* bottom bar */}
@@ -152,6 +164,7 @@ const PageImage = ({ backPagePress }) => {
         />
       </View>
     </View>
+    </SafeAreaView>
   );
 };
 
