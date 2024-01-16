@@ -12,7 +12,7 @@ import useAuth from "../hooks/useAuth";
 import { setDoc, doc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { useNavigation } from "@react-navigation/native";
-
+import ImageInput from "../components/ImageInput";
 const ModalScreen = () => {
   const { user } = useAuth();
   const [image, setImage] = useState(null);
@@ -47,25 +47,22 @@ const ModalScreen = () => {
         tw("flex-1 items-center pt-1"),
       ]}
     >
-      <Image
-        style={tw("h-20 w-full")}
-        resizeMode="contain"
-        source={{ uri: "https://links.papareact.com/2pf" }}
-      />
+      <Text style={[{ color: "brown", fontSize: 40 }, tw(" p-2 font-bold")]}>
+        S w i c o n
+      </Text>
       <Text style={[{ color: "grey" }, tw("text-xl p-2 font-bold")]}>
         Welcome {user?.displayName}
       </Text>
       <Text style={tw("text-center p-4 font-bold text-red-400")}>
-        Step 1: The Profile Pic
+        The Profile Pic
       </Text>
-      <TextInput
-        value={image}
-        onChangeText={setImage}
-        style={tw("pb-2 text-xl text-center")}
-        placeholder="Enter a Profile Pic Url"
-      />
+          
+      <View style={{width:200,height:200, borderRadius:100,} }>
+      <ImageInput  initValue={image} onChange={(value) => {setImage(value)}} />
+
+      </View>
       <Text style={tw("text-center p-4 font-bold text-red-400")}>
-        Step 2: The Job
+       The Job
       </Text>
       <TextInput
         value={job}
@@ -74,7 +71,7 @@ const ModalScreen = () => {
         placeholder="Enter your Occupation"
       />
       <Text style={tw("text-center p-4 font-bold text-red-400")}>
-        Step 1: The Age
+       The Age
       </Text>
       <TextInput
         maxLength={2}
@@ -83,6 +80,17 @@ const ModalScreen = () => {
         onChangeText={setAge}
         style={tw("pb-2 text-xl text-center")}
         placeholder="Enter your Age"
+      />
+      <Text style={tw("text-center p-4 font-bold text-red-400")}>
+       The Address
+      </Text>
+      <TextInput
+        maxLength={2}
+        keyboardType="numeric"
+        value={age}
+        onChangeText={setAge}
+        style={tw("pb-2 text-xl text-center")}
+        placeholder="Enter your Address"
       />
       <TouchableOpacity
         disabled={incompleteForm}

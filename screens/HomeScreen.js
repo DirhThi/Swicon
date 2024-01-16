@@ -10,7 +10,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import useAuth from "../hooks/useAuth";
 import { useNavigation } from "@react-navigation/native";
 import tw from "tailwind-react-native-classnames";
-import { AntDesign, Entypo, Ionicons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, Entypo, Ionicons ,FontAwesome5} from "@expo/vector-icons";
 import Swiper from "react-native-deck-swiper";
 import { db, timestamp } from "../firebase";
 import {
@@ -26,6 +26,102 @@ import {
 import generateId from "../lib/generateId";
 
 const DUMMY_DATA = [
+  {
+    displayName: "Anton Jeejo",
+    job: "Software Engineer",
+    photoURL:
+      "https://pbs.twimg.com/profile_images/1540318789061197825/RiJ0V1sR_400x400.jpg",
+    age: 23,
+    id: 1,
+  },
+  {
+    displayName: "Mark Zuckerberg",
+    job: "Programmer",
+    photoURL:
+      "https://upload.wikimedia.org/wikipedia/commons/1/18/Mark_Zuckerberg_F8_2019_Keynote_%2832830578717%29_%28cropped%29.jpg",
+    age: 39,
+    id: 2,
+  },
+  {
+    displayName: "Justin Mateen",
+    job: "Software Developer",
+    photoURL:
+      "https://i.insider.com/606730e3856cd700198a2dd1?width=1136&format=jpeg",
+    age: 37,
+    id: 3,
+  },
+  {
+    displayName: "Anton Jeejo",
+    job: "Software Engineer",
+    photoURL:
+      "https://pbs.twimg.com/profile_images/1540318789061197825/RiJ0V1sR_400x400.jpg",
+    age: 23,
+    id: 1,
+  },
+  {
+    displayName: "Mark Zuckerberg",
+    job: "Programmer",
+    photoURL:
+      "https://upload.wikimedia.org/wikipedia/commons/1/18/Mark_Zuckerberg_F8_2019_Keynote_%2832830578717%29_%28cropped%29.jpg",
+    age: 39,
+    id: 2,
+  },
+  {
+    displayName: "Justin Mateen",
+    job: "Software Developer",
+    photoURL:
+      "https://i.insider.com/606730e3856cd700198a2dd1?width=1136&format=jpeg",
+    age: 37,
+    id: 3,
+  },
+  {
+    displayName: "Anton Jeejo",
+    job: "Software Engineer",
+    photoURL:
+      "https://pbs.twimg.com/profile_images/1540318789061197825/RiJ0V1sR_400x400.jpg",
+    age: 23,
+    id: 1,
+  },
+  {
+    displayName: "Mark Zuckerberg",
+    job: "Programmer",
+    photoURL:
+      "https://upload.wikimedia.org/wikipedia/commons/1/18/Mark_Zuckerberg_F8_2019_Keynote_%2832830578717%29_%28cropped%29.jpg",
+    age: 39,
+    id: 2,
+  },
+  {
+    displayName: "Justin Mateen",
+    job: "Software Developer",
+    photoURL:
+      "https://i.insider.com/606730e3856cd700198a2dd1?width=1136&format=jpeg",
+    age: 37,
+    id: 3,
+  },
+  {
+    displayName: "Anton Jeejo",
+    job: "Software Engineer",
+    photoURL:
+      "https://pbs.twimg.com/profile_images/1540318789061197825/RiJ0V1sR_400x400.jpg",
+    age: 23,
+    id: 1,
+  },
+  {
+    displayName: "Mark Zuckerberg",
+    job: "Programmer",
+    photoURL:
+      "https://upload.wikimedia.org/wikipedia/commons/1/18/Mark_Zuckerberg_F8_2019_Keynote_%2832830578717%29_%28cropped%29.jpg",
+    age: 39,
+    id: 2,
+  },
+  {
+    displayName: "Justin Mateen",
+    job: "Software Developer",
+    photoURL:
+      "https://i.insider.com/606730e3856cd700198a2dd1?width=1136&format=jpeg",
+    age: 37,
+    id: 3,
+  },
   {
     displayName: "Anton Jeejo",
     job: "Software Engineer",
@@ -198,18 +294,10 @@ const HomeScreen = () => {
     <SafeAreaView style={tw.style("flex-1 mt-6")}>
       <View style={tw.style("flex-row items-center justify-between px-5")}>
         <TouchableOpacity onPress={() => navigation.navigate("User") } >
-          <Image
-            style={tw.style("h-10 w-10 rounded-full")}
-            source={{
-              uri: "https://img.freepik.com/free-icon/user_318-159711.jpg",
-            }}
-          />
+        <FontAwesome5 name="user-edit" size={28} color="#FF5864" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("Modal")}>
-          <Image
-            style={tw.style("h-14 w-14")}
-            source={require("../assets/logo.png")}
-          />
+        <TouchableOpacity onPress={() => navigation.navigate("Locket")}>
+        <MaterialCommunityIcons name="cards-playing-heart-multiple" size={40} color="#FF5864" />
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate("Chat")}>
@@ -273,12 +361,17 @@ const HomeScreen = () => {
                   )}
                 >
                   <View>
-                    <Text style={tw.style("text-xl font-bold")}>
+                    <Text style={tw.style("text-2xl font-bold")}>
                       {card.displayName}
                     </Text>
-                    <Text>{card.job}</Text>
+                    <Text style={tw.style("text-l font-medium")}>{card.job}</Text>
                   </View>
-                  <Text style={tw.style("text-2xl font-bold")}>{card.age}</Text>
+                  <View style={{alignItems:"flex-end"}}> 
+
+                  <Text style={tw.style("text-xl font-bold")}>{card.age}</Text>
+                  <Text style={tw.style("text-l font-medium")}>Tp. Ho Chi Minh</Text>
+
+                  </View>
                 </View>
               </View>
             ) : (
