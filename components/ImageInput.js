@@ -21,6 +21,9 @@ export default function ImageInput({ initValue = '', onChange, ...props }) {
             const base64 = `data:image/jpg;base64,${result.assets[0].base64}`;
             setImage(base64);
             onChange(base64);
+            const uri =result.assets[0].uri;
+            const uploadUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri;
+            console.log(uploadUri);
         }
     };
 
