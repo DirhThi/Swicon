@@ -1,7 +1,6 @@
 import {
   View,
   Text,
-  Image,
   Platform,
   TextInput,
   TouchableOpacity,
@@ -16,6 +15,11 @@ import { db } from "../firebase";
 import { useNavigation } from "@react-navigation/native";
 import ImageInput from "../components/ImageInput";
 import {
+  Box,
+  Center,
+  IconButton,
+  Pressable,
+  Image,
   Radio,
   HStack,
   Toast,
@@ -24,7 +28,7 @@ import {
   Select,
   CheckIcon,
 } from "native-base";
-import { Feather } from "@expo/vector-icons";
+import { Feather,Ionicons, MaterialCommunityIcons  } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as fs from "expo-file-system";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -43,6 +47,7 @@ import tinhThanh from "../lib/address";
 const ModalScreen = () => {
   const { user } = useAuth();
   const [image, setImage] = useState(null);
+  const [rootImage, setrootImage] = useState(null);
   const [imageURL, setImageURL] = useState(null);
   const [name, setName] = useState(null);
   const [gender, setGender] = useState(null);
@@ -51,25 +56,52 @@ const ModalScreen = () => {
   const [profiles, setProfiles] = useState(null);
   const navigation = useNavigation();
   const incompleteForm = !image || !gender || !age || !address;
+  const pickImage = async () => {
+      // No permissions request is necessary for launching the image library
+      let result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          base64: true,
+          aspect: [3, 3],
+          quality: 0.5,
+      });
+
+      // console.log(result);
+
+      if (!result.canceled) {
+          const base64 = `data:image/jpg;base64,${result.assets[0].base64}`;
+          setImage(base64);
+          const uri =result.assets[0].uri;
+          const uploadUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri;
+          setImage(uploadUri);
+          console.log(uploadUri);
+      }
+  };
+
+  function handleResetImage() {
+      setImage(rootImage);
+  }
 
   const fetchUser = async () => {
     const docSnap = await getDoc(doc(db, "users", user.uid));
     if (docSnap.exists()) {
       setProfiles(docSnap.data());
       setName(docSnap.data().displayName);
-      setImageURL(docSnap.data().photoURL);
+      setImage(docSnap.data().photoURL);
+      setrootImage(docSnap.data().photoURL);
       setAge(docSnap.data().age);
       setGender(docSnap.data().gender);
       setAddress(docSnap.data().address);
-
+      console.log(docSnap.data());
     }
   };
   useEffect(() => {
     fetchUser();
+
   }, []);
   useEffect(() => {
-    console.log(address);
-  }, [address]);
+    console.log(image);
+  }, [image]);
   const updateUserProfile = () => {
     if (incompleteForm) return;
     setDoc(doc(db, "users", user.uid), {
@@ -126,14 +158,29 @@ const ModalScreen = () => {
           </Text>
 
           <View style={{ width: 200, height: 200, borderRadius: 100 }}>
-            <ImageInput
-              initValue={
-                "https://upload.wikimedia.org/wikipedia/commons/f/fe/Son_Tung_M-TP_1_%282017%29.png"
-              }
-              onChange={(value) => {
-                setImage(value);
-              }}
-            />
+          <Box  borderRadius={100}  position="relative" w={210} h="210"  rounded={0} overflow="hidden" >
+            <Pressable borderRadius={100} onPress={pickImage}>
+                {image ? (
+                    <Image borderRadius={100} alt="" src={image}  h="200" w="200" />
+                ) : (
+                    <Center borderRadius={100} bg="gray.200"  h="full" w="full">
+                        <MaterialCommunityIcons name="file-image-plus-outline" size={40} color="black" />
+                    </Center>
+                )}
+            </Pressable>
+
+            {image && (
+                <IconButton 
+                    position="absolute"
+                    right="0"
+                    top="-15"
+                    rounded="full"
+                    py="3"
+                    onPress={handleResetImage}
+                    icon={<Ionicons name="close" size={24} color="#f4a261"/>}
+                />
+            )}
+        </Box>
           </View>
           <Text style={tw("text-center p-4 font-bold text-red-400")}>
             The Gender

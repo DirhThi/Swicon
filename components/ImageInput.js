@@ -3,7 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-export default function ImageInput({ initValue = '', onChange, ...props }) {
+export default function ImageInput({ initValue , onChange, ...props }) {
     const [image, setImage] = useState(initValue);
     const pickImage = async () => {
         // No permissions request is necessary for launching the image library
@@ -20,9 +20,9 @@ export default function ImageInput({ initValue = '', onChange, ...props }) {
         if (!result.canceled) {
             const base64 = `data:image/jpg;base64,${result.assets[0].base64}`;
             setImage(base64);
-            onChange(base64);
             const uri =result.assets[0].uri;
             const uploadUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri;
+            onChange(uploadUri);
             console.log(uploadUri);
         }
     };
