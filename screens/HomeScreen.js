@@ -25,25 +25,7 @@ import {
 } from "firebase/firestore";
 import generateId from "../lib/generateId";
 
-const DUMMY_DATA = [
-  {
-    displayName: "Anton Jeejo",
-    job: "Software Engineer",
-    photoURL:
-      "https://pbs.twimg.com/profile_images/1540318789061197825/RiJ0V1sR_400x400.jpg",
-    age: 23,
-    id: 1,
-  },
-  {
-    displayName: "Mark Zuckerberg",
-    job: "Programmer",
-    photoURL:
-      "https://upload.wikimedia.org/wikipedia/commons/1/18/Mark_Zuckerberg_F8_2019_Keynote_%2832830578717%29_%28cropped%29.jpg",
-    age: 39,
-    id: 2,
-  },
- 
-];
+
 
 const HomeScreen = () => {
   const { user, logout } = useAuth();
@@ -52,139 +34,93 @@ const HomeScreen = () => {
   const swipeRef = useRef(null);
 
   useLayoutEffect(() => {
-    // const unsubscribe = onSnapshot(doc(db, "users", user.uid), (snapShot) => {
-    //   console.log(snapShot.data());
-    //   if (!snapShot.exists()) {
-    //     navigation.navigate("Modal");
-    //   }
-    // });
-
-    // return unsubscribe();
-    getDoc(doc(db, "users", user.uid)).then((snapShot) => {
-      if (!snapShot.exists()) {
+    const unsub = onSnapshot(doc(db, "users", user.uid), (snapshot) => {
+      if (!snapshot.exists()) {
         navigation.navigate("Modal");
       }
     });
-  }, []);
-
-  useEffect(() => {
-    let unsub;
-
-    const fetchCards = async () => {
-      //comes after doing passes in swipeleft
-
-      const passes = await getDocs(
-        collection(db, "users", user.uid, "passes")
-      ).then((snapShot) => snapShot.docs.map((doc) => doc.id));
-
-      console.log(passes);
-
-      const swipes = await getDocs(
-        collection(db, "users", user.uid, "swipes")
-      ).then((snapShot) => snapShot.docs.map((doc) => doc.id));
-
-      const passedUserIds = passes.length > 0 ? passes : ["temp"];
-      const swipedUserIds = swipes.length > 0 ? swipes : ["temp"];
-
-      unsub = onSnapshot(
-        query(
-          collection(db, "users"),
-          where("id", "not-in", [...passedUserIds, ...swipedUserIds])
-        ),
-        (snapShot) => {
-          setProfiles(
-            snapShot.docs
-              .filter((doc) => doc.id !== user.uid)
-              .map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              }))
-          );
-        }
-      );
-
-      //comes before doing passes in swipeleft
-
-      // unsub = onSnapshot(collection(db, "users"), (snapShot) => {
-      //   setProfiles(
-      //     snapShot.docs
-      //       .filter((doc) => doc.id !== user.uid)
-      //       .map((doc) => ({
-      //         id: doc.id,
-      //         ...doc.data(),
-      //       }))
-      //   );
-      // });
-    };
-
-    fetchCards();
 
     return unsub;
   }, []);
 
-  const swipeLeft = (cardIndex) => {
-    if (!profiles[cardIndex]) {
-      return;
-    }
+  useEffect(() => {
+    (async () => {
+      let passes = await getDocs(
+        collection(db, "users", user.uid, "passes")
+      ).then((snapshot) => snapshot.docs.map((doc) => doc.id));
+      const passedUserIds = passes.length > 0 ? passes : ["test"];
 
-    const userSwiped = profiles[cardIndex];
-    setDoc(doc(db, "users", user.uid, "passes", userSwiped.id), userSwiped);
-  };
+      let swipes = await getDocs(
+        collection(db, "users", user.uid, "swipes")
+      ).then((snapshot) => snapshot.docs.map((doc) => doc.id));
 
-  const swipeRight = async (cardIndex) => {
-    // if (!profiles[cardIndex]) {
-    //   return;
-    // }
+      const swipedUserIds = swipes.length > 0 ? swipes : ["test"];
 
-    // const userSwiped = profiles[cardIndex];
-
-    // setDoc(doc(db, "users", user.uid, "swipes", userSwiped.id), userSwiped);
-
-    try {
-      if (!profiles[cardIndex]) {
-        return;
-      }
-
-      const userSwiped = profiles[cardIndex];
-      const loggedInProfile = await (
-        await getDoc(doc(db, "users", user.uid))
-      ).data();
-
-      console.log("loggedInProfile", loggedInProfile);
-
-      getDoc(doc(db, "users", userSwiped.id, "swipes", user.uid)).then(
-        (docSnap) => {
-          if (docSnap.exists()) {
-            setDoc(
-              doc(db, "users", user.uid, "swipes", userSwiped.id),
-              userSwiped
-            );
-            setDoc(doc(db, "matches", generateId(user.uid, userSwiped.id)), {
-              users: {
-                [user.uid]: loggedInProfile,
-                [userSwiped.id]: userSwiped,
-              },
-              usersMatched: [user.uid, userSwiped.id],
-              timestamp,
-            });
-
-            console.log(loggedInProfile, userSwiped);
-
-            navigation.navigate("Match", {
-              loggedInProfile,
-              userSwiped,
-            });
-          } else {
-            setDoc(
-              doc(db, "users", user.uid, "swipes", userSwiped.id),
-              userSwiped
-            );
-          }
+      const unsub = onSnapshot(
+        query(
+          collection(db, "users"),
+          where("id", "not-in", [...passedUserIds, ...swipedUserIds])
+        ),
+        (snapshot) => {
+          setProfiles(
+            snapshot.docs
+              .filter((doc) => doc.id !== user.uid)
+              .map((doc) => ({ id: doc.id, ...doc.data() }))
+          );
         }
       );
-    } catch (error) {
-      console.log(error);
-    }
+    })();
+  }, [db]);
+
+  const swipeLeft = async (cardIndex) => {
+    if (!profiles[cardIndex]) return;
+
+    const userSwiped = profiles[cardIndex];
+    console.log(`You Passed on ${userSwiped.displayName}`);
+
+    setDoc(doc(db, "users", user.uid, "passes", userSwiped.id), userSwiped);
+  };
+  const swipeRight = async (cardIndex) => {
+    if (!profiles[cardIndex]) return;
+    const userSwiped = profiles[cardIndex];
+
+    const loggedInProfile = await (
+      await getDoc(doc(db, "users", user.uid))
+    ).data();
+
+    getDoc(doc(db, "users", userSwiped.id, "swipes", user.uid)).then(
+      (snapshot) => {
+        if (snapshot.exists()) {
+          console.log("Hello");
+          console.log(`Hooray you matched with ${userSwiped.displayName}`);
+
+          setDoc(
+            doc(db, "users", user.uid, "swipes", userSwiped.id),
+            userSwiped
+          );
+
+          setDoc(doc(db, "matches", generateId(user.uid, userSwiped.id)), {
+            users: {
+              [user.uid]: loggedInProfile,
+              [userSwiped.id]: userSwiped,
+            },
+            usersMatched: [user.uid, userSwiped.id],
+            timestamp: new Date(),
+          });
+
+          navigation.navigate("Match", {
+            loggedInProfile,
+            userSwiped,
+          });
+        } else {
+          console.log(`You Swiped on ${userSwiped.displayName}`);
+          setDoc(
+            doc(db, "users", user.uid, "swipes", userSwiped.id),
+            userSwiped
+          );
+        }
+      }
+    );
   };
 
   return (

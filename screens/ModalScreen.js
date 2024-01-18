@@ -229,7 +229,6 @@ const ModalScreen = () => {
                 />
               )}
             </Box>
-            <Button onPress={uploadImage}></Button>
           </View>
           <Text style={tw("text-center p-4 font-bold text-red-400")}>
             The Gender
