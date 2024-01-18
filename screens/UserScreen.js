@@ -32,7 +32,7 @@ export default function UserScreen({ navigation }) {
           style={{ paddingBottom: 10, paddingTop: 10, alignItems: "center" }}
         >
           <HStack mt={4}>
-            <Header title="User" />
+            <Header title="User" color={"white"} />
             <TouchableOpacity onPress={() => navigation.navigate("Modal")} >
               <FontAwesome
                 style={{ margin: 20, marginStart: 200 }}

@@ -27,8 +27,9 @@ import {
   Input,
   Select,
   CheckIcon,
+  useToast,
 } from "native-base";
-import { Feather,Ionicons, MaterialCommunityIcons  } from "@expo/vector-icons";
+import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as fs from "expo-file-system";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -43,10 +44,12 @@ import {
   where,
 } from "firebase/firestore";
 import tinhThanh from "../lib/address";
+import Header from "../components/Header";
 
 const ModalScreen = () => {
   const { user } = useAuth();
   const [image, setImage] = useState(null);
+  const [isNewUser, setIsNewUser] = useState(true);
   const [rootImage, setrootImage] = useState(null);
   const [imageURL, setImageURL] = useState(null);
   const [name, setName] = useState(null);
@@ -57,29 +60,29 @@ const ModalScreen = () => {
   const navigation = useNavigation();
   const incompleteForm = !image || !gender || !age || !address;
   const pickImage = async () => {
-      // No permissions request is necessary for launching the image library
-      let result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          base64: true,
-          aspect: [3, 3],
-          quality: 0.5,
-      });
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      base64: true,
+      aspect: [3, 3],
+      quality: 0.5,
+    });
 
-      // console.log(result);
+    // console.log(result);
 
-      if (!result.canceled) {
-          const base64 = `data:image/jpg;base64,${result.assets[0].base64}`;
-          setImage(base64);
-          const uri =result.assets[0].uri;
-          const uploadUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri;
-          setImage(uploadUri);
-          console.log(uploadUri);
-      }
+    if (!result.canceled) {
+      const base64 = `data:image/jpg;base64,${result.assets[0].base64}`;
+      setImage(base64);
+      // const uri =result.assets[0].uri;
+      // const uploadUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri;
+      // setImageURL(uploadUri);
+      // console.log(uploadUri);
+    }
   };
 
   function handleResetImage() {
-      setImage(rootImage);
+    setImage(rootImage);
   }
 
   const fetchUser = async () => {
@@ -93,31 +96,12 @@ const ModalScreen = () => {
       setGender(docSnap.data().gender);
       setAddress(docSnap.data().address);
       console.log(docSnap.data());
+      setIsNewUser(false);
     }
   };
   useEffect(() => {
     fetchUser();
-
   }, []);
-  useEffect(() => {
-    console.log(image);
-  }, [image]);
-  const updateUserProfile = () => {
-    if (incompleteForm) return;
-    setDoc(doc(db, "users", user.uid), {
-      id: user.uid,
-      displayName: user.displayName,
-      photoURL: image,
-      gender: gender,
-      age: age,
-      address: address,
-      timestamp: serverTimestamp(),
-    })
-      .then(() => {
-        navigation.navigate("Home");
-      })
-      .catch(alert);
-  };
 
   const uploadImage = async () => {
     const data = new FormData();
@@ -125,17 +109,50 @@ const ModalScreen = () => {
     data.append("upload_preset", "swicon");
     data.append("cloud_name", "duv0w3w4u");
     data.append("folder", "swicon");
+    try {
+      const res = await fetch(
+        "https://api.cloudinary.com/v1_1/duv0w3w4u/image/upload",
+        {
+          method: "post",
+          body: data,
+        }
+      );
+      const resData = await res.json();
+      if (resData.error) {
+        console.log(data.error);
+        return;
+    }
+      return resData.url;
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
-    fetch("https://api.cloudinary.com/v1_1/duv0w3w4u/image/upload", {
-      method: "post",
-      body: data,
+  const updateUserProfile = async () => {
+    if (incompleteForm) return;
+    const url = await uploadImage();
+    console.log(url);
+    setDoc(doc(db, "users", user.uid), {
+      id: user.uid,
+      displayName: name,
+      photoURL: url,
+      gender: gender,
+      age: age,
+      address: address,
+      timestamp: serverTimestamp(),
     })
-      .then((resp) => resp.json())
-      .then((data) => {
-        setImageURL(data.url);
-        console.log(data.url);
+      .then(() => {
+        if (isNewUser) {
+          console.log("save user success");
+          navigation.navigate("Home");
+          Toast.show({ description: "Save user successed !" });
+        } else {
+          console.log("save user success");
+          navigation.goBack();
+          Toast.show({ description: "Update user successed !" });
+        }
       })
-      .catch((err) => console.log(err));
+      .catch(alert);
   };
 
   return (
@@ -145,42 +162,74 @@ const ModalScreen = () => {
         tw("flex-1 items-center pt-1"),
       ]}
     >
-      <Text style={[{ color: "brown", fontSize: 40 }, tw(" p-2 font-bold")]}>
-        S w i c o n
-      </Text>
+      {!isNewUser ? (
+        <Header mb={-25} title={"Edit user"} color={"#f4a261"}></Header>
+      ) : (
+        <Text style={[{ color: "brown", fontSize: 40 }, tw(" p-2 font-bold")]}>
+          S w i c o n
+        </Text>
+      )}
+
       <ScrollView automaticallyAdjustKeyboardInsets={true}>
         <View style={[tw("flex-1 items-center ")]}>
-          <Text style={[{ color: "grey" }, tw("text-xl p-2 font-bold")]}>
-            Welcome {name}
+          <Text style={tw("text-center p-4 font-bold text-red-400")}>
+            The Name
           </Text>
+          <Input
+            value={name}
+            onChangeText={setName}
+            pb={2}
+            variant="unstyled"
+            fontSize={20}
+            textAlign={"center"}
+            placeholder="Enter your Name"
+          />
           <Text style={tw("text-center p-4 font-bold text-red-400")}>
             The Profile Pic
           </Text>
 
           <View style={{ width: 200, height: 200, borderRadius: 100 }}>
-          <Box  borderRadius={100}  position="relative" w={210} h="210"  rounded={0} overflow="hidden" >
-            <Pressable borderRadius={100} onPress={pickImage}>
+            <Box
+              borderRadius={100}
+              position="relative"
+              w={210}
+              h="210"
+              rounded={0}
+              overflow="hidden"
+            >
+              <Pressable borderRadius={100} onPress={pickImage}>
                 {image ? (
-                    <Image borderRadius={100} alt="" src={image}  h="200" w="200" />
+                  <Image
+                    borderRadius={100}
+                    alt=""
+                    src={image}
+                    h="200"
+                    w="200"
+                  />
                 ) : (
-                    <Center borderRadius={100} bg="gray.200"  h="full" w="full">
-                        <MaterialCommunityIcons name="file-image-plus-outline" size={40} color="black" />
-                    </Center>
+                  <Center borderRadius={100} bg="gray.200" h="full" w="full">
+                    <MaterialCommunityIcons
+                      name="file-image-plus-outline"
+                      size={40}
+                      color="black"
+                    />
+                  </Center>
                 )}
-            </Pressable>
+              </Pressable>
 
-            {image && (
-                <IconButton 
-                    position="absolute"
-                    right="0"
-                    top="-15"
-                    rounded="full"
-                    py="3"
-                    onPress={handleResetImage}
-                    icon={<Ionicons name="close" size={24} color="#f4a261"/>}
+              {image && (
+                <IconButton
+                  position="absolute"
+                  right="0"
+                  top="-15"
+                  rounded="full"
+                  py="3"
+                  onPress={handleResetImage}
+                  icon={<Ionicons name="close" size={24} color="#f4a261" />}
                 />
-            )}
-        </Box>
+              )}
+            </Box>
+            <Button onPress={uploadImage}></Button>
           </View>
           <Text style={tw("text-center p-4 font-bold text-red-400")}>
             The Gender
