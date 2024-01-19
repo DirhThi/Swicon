@@ -12,9 +12,11 @@ import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Camera, CameraType } from "expo-camera";
 import * as MediaLibrary from "expo-media-library";
+import useAuth from "../../hooks/useAuth";
 import { images } from "../../assets/images/index";
 import { Snackbar, Provider as PaperProvider } from "react-native-paper";
 import tw from "tailwind-react-native-classnames";
+import * as FileSystem from "expo-file-system";
 import {
   MaterialIcons,
   Ionicons,
@@ -24,7 +26,17 @@ import {
   Feather,
   FontAwesome,
 } from "@expo/vector-icons";
-
+import { db, timestamp } from "../../firebase";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
+  setDoc,
+  where,
+} from "firebase/firestore";
 const widthScreen = Dimensions.get("window").width;
 const heightScreen = Dimensions.get("window").height;
 
@@ -32,10 +44,12 @@ const PageHome = ({ onPressed }) => {
   const navigation = useNavigation();
   const [hasCameraPermission, setHasCameraPermission] = useState(null);
   const [image, setImage] = useState(null);
+  const [base64String, setBase64String] = useState(null);
   const [caption, setCaption] = useState(null);
   const [type, setType] = useState(Camera.Constants.Type.back);
   const [flash, setFlash] = useState(Camera.Constants.FlashMode.off);
   const cameraRef = useRef(null);
+  const { user } = useAuth();
   const [snackbarVisible, setSnackbarVisible] = useState(false);
 
   // const navigation = useNavigation();
@@ -51,8 +65,10 @@ const PageHome = ({ onPressed }) => {
   const takePicture = async () => {
     if (cameraRef) {
       try {
-        const data = await cameraRef.current.takePictureAsync();
-        console.log(data);
+        setCaption(null);
+        const data = await cameraRef.current.takePictureAsync({ base64: true });
+        console.log(data.uri);
+        setBase64String(data.base64);
         setImage(data.uri);
       } catch (e) {
         console.log(e);
@@ -61,8 +77,9 @@ const PageHome = ({ onPressed }) => {
   };
   const uploadImage = async () => {
     if (image) {
+      const base64 = `data:image/jpg;base64,${base64String}`;
       const data = new FormData();
-      data.append("file", image);
+      data.append("file", base64);
       data.append("upload_preset", "swicon");
       data.append("cloud_name", "duv0w3w4u");
       data.append("folder", "swicon");
@@ -88,15 +105,22 @@ const PageHome = ({ onPressed }) => {
     }
   };
 
-  const pushLocket = async () => {
+  const pushLocket = async () => { 
     const url = await uploadImage();
     console.log(url);
+    const loggedInProfile = await (
+      await getDoc(doc(db, "users", user.uid))
+    ).data();
     const idlocket = user.uid + new Date();
-    setDoc(doc(db, "users", user.uid, "locket", idlocket), {
-      id: idlocket,
+    setDoc(doc(db, "locket", idlocket), {
+      user: loggedInProfile,
       photoURL: url,
-      textStatus: "",
+      caption: caption,
+      timestamp: new Date(),
     });
+
+    Toast.show({ description: "Push locket successed !" });
+    setImage(null);
   };
   const saveImage = async () => {
     if (image) {
@@ -215,21 +239,23 @@ const PageHome = ({ onPressed }) => {
               }}
             />
           </View>
-          <View ml={6}
-            mr={6} >
-          <Input
-            bottom={6}
-            position="absolute"
-            borderColor={"#FF5864"}
-            width={"full"}
-            variant="rounded"
-            fontSize={16}
-            borderWidth={2}
-            h={"12"}
-            placeholder="Enter your caption"
-          />
+          <View ml={6} mr={6}>
+            <Input
+              value={caption}
+              onChangeText={setCaption}
+              bottom={6}
+              position="absolute"
+              borderColor={"#FF5864"}
+              width={"full"}
+              variant="rounded"
+              background={"gray"}
+              color={"white"}
+              fontSize={16}
+              borderWidth={2}
+              h={"12"}
+              placeholder="Enter your caption"
+            />
           </View>
-         
         </Box>
         {/* control */}
         <View
@@ -248,7 +274,11 @@ const PageHome = ({ onPressed }) => {
           </TouchableOpacity>
           {/* take photo */}
           {/* push image */}
-          <TouchableOpacity onPress={() => {}}>
+          <TouchableOpacity
+            onPress={() => {
+              pushLocket();
+            }}
+          >
             <View
               p={2}
               w={82}
@@ -317,14 +347,6 @@ const PageHome = ({ onPressed }) => {
             <Fontisto name="angle-dobule-down" size={24} color="#FF5864" />
           </View>
         </TouchableOpacity>
-
-        <Snackbar
-          visible={snackbarVisible}
-          onDismiss={() => setSnackbarVisible(false)}
-          duration={Snackbar.DURATION_SHORT} // You can adjust the duration as needed
-        >
-          Image saved successfully!
-        </Snackbar>
       </SafeAreaView>
     </PaperProvider>
   );
