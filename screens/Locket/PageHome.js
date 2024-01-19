@@ -7,7 +7,7 @@ import {
   Pressable,
   TouchableOpacity,
 } from "react-native";
-import { Center, View } from "native-base";
+import { Box, Center, Input, Toast, View } from "native-base";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Camera, CameraType } from "expo-camera";
@@ -20,6 +20,9 @@ import {
   Ionicons,
   FontAwesome5,
   Fontisto,
+  MaterialCommunityIcons,
+  Feather,
+  FontAwesome,
 } from "@expo/vector-icons";
 
 const widthScreen = Dimensions.get("window").width;
@@ -29,6 +32,7 @@ const PageHome = ({ onPressed }) => {
   const navigation = useNavigation();
   const [hasCameraPermission, setHasCameraPermission] = useState(null);
   const [image, setImage] = useState(null);
+  const [caption, setCaption] = useState(null);
   const [type, setType] = useState(Camera.Constants.Type.back);
   const [flash, setFlash] = useState(Camera.Constants.FlashMode.off);
   const cameraRef = useRef(null);
@@ -55,13 +59,50 @@ const PageHome = ({ onPressed }) => {
       }
     }
   };
+  const uploadImage = async () => {
+    if (image) {
+      const data = new FormData();
+      data.append("file", image);
+      data.append("upload_preset", "swicon");
+      data.append("cloud_name", "duv0w3w4u");
+      data.append("folder", "swicon");
+      try {
+        const res = await fetch(
+          "https://api.cloudinary.com/v1_1/duv0w3w4u/image/upload",
+          {
+            method: "post",
+            body: data,
+          }
+        );
+        const resData = await res.json();
+        if (resData.error) {
+          console.log(data.error);
+          return;
+        }
+        return resData.url;
+      } catch (err) {
+        console.log(err);
+      }
+    } else {
+      console.log("No image");
+    }
+  };
 
+  const pushLocket = async () => {
+    const url = await uploadImage();
+    console.log(url);
+    const idlocket = user.uid + new Date();
+    setDoc(doc(db, "users", user.uid, "locket", idlocket), {
+      id: idlocket,
+      photoURL: url,
+      textStatus: "",
+    });
+  };
   const saveImage = async () => {
     if (image) {
       try {
         await MediaLibrary.createAssetAsync(image);
-        setImage(null);
-        setSnackbarVisible(true);
+        Toast.show({ description: "Save image successed !" });
       } catch (error) {
         console.log(error);
       }
@@ -76,7 +117,7 @@ const PageHome = ({ onPressed }) => {
     return (
       <View>
         <View
-          borderRadius={60}
+          borderRadius={40}
           overflow={"hidden"}
           w={widthScreen}
           h={widthScreen}
@@ -89,7 +130,12 @@ const PageHome = ({ onPressed }) => {
           ></Camera>
         </View>
         {/* control */}
-        <View flexDirection={"row"} justifyContent={"space-around"} alignItems={"center"} mt={8} >
+        <View
+          flexDirection={"row"}
+          justifyContent={"space-around"}
+          alignItems={"center"}
+          mt={8}
+        >
           {/* flash */}
           <TouchableOpacity
             onPress={() => {
@@ -100,19 +146,37 @@ const PageHome = ({ onPressed }) => {
               );
             }}
           >
-            <Ionicons name={flash === Camera.Constants.FlashMode.off ? "flash-off-outline" : "flash-outline"} size={36} color="#FF5864" />
-           
+            <Ionicons
+              name={
+                flash === Camera.Constants.FlashMode.off
+                  ? "flash-off-outline"
+                  : "flash-outline"
+              }
+              size={36}
+              color="#FF5864"
+            />
           </TouchableOpacity>
           {/* take photo */}
-          <TouchableOpacity
-            onPress={takePicture}
-          >
-                      <View p={2} w={82} h={82} justifyContent={"center"} alignItems={"center"} borderRadius={50} borderWidth={3} borderColor={"#e63946"}>
-                        <View borderRadius={50} w={16} h={16} justifyItems={"center"} alignSelf={"center"} bg={"#FF5864"}>
-
-                        </View>
-                      </View>
-
+          <TouchableOpacity onPress={takePicture}>
+            <View
+              p={2}
+              w={82}
+              h={82}
+              justifyContent={"center"}
+              alignItems={"center"}
+              borderRadius={50}
+              borderWidth={3}
+              borderColor={"#e63946"}
+            >
+              <View
+                borderRadius={50}
+                w={16}
+                h={16}
+                justifyItems={"center"}
+                alignSelf={"center"}
+                bg={"#FF5864"}
+              ></View>
+            </View>
           </TouchableOpacity>
 
           {/* type camera */}
@@ -134,43 +198,91 @@ const PageHome = ({ onPressed }) => {
   const renderImage = () => {
     return (
       <View>
-        <Image source={{ uri: image }} style={styles.camera} />
+        <Box position="relative" overflow="hidden">
+          <View
+            borderRadius={40}
+            overflow={"hidden"}
+            w={widthScreen}
+            h={widthScreen}
+          >
+            <Image
+              source={{ uri: image }}
+              style={{
+                borderRadius: 40,
+                overflow: "hidden",
+                width: "100%",
+                height: "100%",
+              }}
+            />
+          </View>
+          <View ml={6}
+            mr={6} >
+          <Input
+            bottom={6}
+            position="absolute"
+            borderColor={"#FF5864"}
+            width={"full"}
+            variant="rounded"
+            fontSize={16}
+            borderWidth={2}
+            h={"12"}
+            placeholder="Enter your caption"
+          />
+          </View>
+         
+        </Box>
         {/* control */}
-        <View className="flex-row justify-around items-center mt-8">
-          {/* close */}
+        <View
+          flexDirection={"row"}
+          justifyContent={"space-around"}
+          alignItems={"center"}
+          mt={8}
+        >
+          {/* flash */}
           <TouchableOpacity
             onPress={() => {
               setImage(null);
             }}
           >
-            <Image
-              source={images.close}
-              className="w-[40px] h-[40px]"
-              style={{
-                tintColor: "white",
-              }}
-            />
+            <Ionicons name="close-sharp" size={36} color="#FF5864" />
           </TouchableOpacity>
-          {/* send */}
+          {/* take photo */}
+          {/* push image */}
+          <TouchableOpacity onPress={() => {}}>
+            <View
+              p={2}
+              w={82}
+              h={82}
+              justifyContent={"center"}
+              alignItems={"center"}
+              borderRadius={50}
+              borderWidth={3}
+              borderColor={"#e63946"}
+            >
+              <View
+                borderRadius={50}
+                w={16}
+                h={16}
+                justifyContent={"center"}
+                alignItems={"center"}
+                bg={"transparent"}
+              >
+                <MaterialCommunityIcons
+                  name="upload"
+                  size={50}
+                  color="#FF5864"
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          {/* type camera */}
           <TouchableOpacity
-            className="bg-zinc-600 w-24 h-24 justify-center items-center rounded-full"
             onPress={() => {
-              console.log("aaa");
+              saveImage();
             }}
           >
-            <Image
-              source={images.send}
-              className="w-[50px] h-[50px]"
-              style={{ tintColor: "white" }}
-            />
-          </TouchableOpacity>
-          {/* download */}
-          <TouchableOpacity onPress={saveImage}>
-            <Image
-              source={images.download}
-              className="w-[40px] h-[40px]"
-              style={{ tintColor: "white" }}
-            />
+            <Feather name="download" size={32} color="#FF5864" />
           </TouchableOpacity>
         </View>
       </View>
@@ -193,17 +305,19 @@ const PageHome = ({ onPressed }) => {
           </TouchableOpacity>
         </View>
         {/* camera */}
-        <View shadow={9}  mt={20}>{!image ? renderCamera() : renderImage()}</View>
+        <View shadow={9} mt={20}>
+          {!image ? renderCamera() : renderImage()}
+        </View>
         {/* bottom */}
-          <TouchableOpacity             onPress={onPressed}>
+        <TouchableOpacity onPress={onPressed}>
           <View mt={12} justifyContent={"center"} alignItems={"center"}>
-
-            <Text style={{color:"#e63946",fontSize:24,fontWeight:"600"}}>History</Text>
+            <Text style={{ color: "#e63946", fontSize: 24, fontWeight: "600" }}>
+              History
+            </Text>
             <Fontisto name="angle-dobule-down" size={24} color="#FF5864" />
-            </View>
+          </View>
+        </TouchableOpacity>
 
-          </TouchableOpacity>
-        
         <Snackbar
           visible={snackbarVisible}
           onDismiss={() => setSnackbarVisible(false)}
@@ -219,10 +333,9 @@ const PageHome = ({ onPressed }) => {
 const styles = StyleSheet.create({
   camera: {
     width: widthScreen,
-    height: (widthScreen * 4) / 3,
-    borderRadius: 60,
+    height: widthScreen,
+    borderRadius: 40,
     overflow: "hidden",
-    marginTop: widthScreen / 18,
   },
 });
 
