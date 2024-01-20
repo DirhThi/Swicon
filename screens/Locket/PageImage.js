@@ -20,11 +20,27 @@ import {
   Fontisto,
   Entypo,
 } from "@expo/vector-icons";
-import { useRef, useState } from "react";
+import { useRef, useState,useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { Title } from "react-native-paper";
 const widthScreen = Dimensions.get("window").width;
 const heightScreen = Dimensions.get("window").height;
+import useAuth from "../../hooks/useAuth";
+import { db } from "../../firebase";
+import { getFirestore } from "firebase/firestore";
+import { Firestore } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
+  orderBy,
+  setDoc,
+  where,
+} from "firebase/firestore";
+
 
 const data = [
   {
@@ -68,10 +84,36 @@ const data = [
 const PageImage = ({ backPagePress }) => {
   const navigation = useNavigation();
   const initialRef = useRef(null);
+  const { user } = useAuth();
   const finalRef = useRef(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalFocus, setModalFocus] = useState(false);
+  const [locketMatches, setLocketMatches] = useState([]);
+  const fetchData = async () => {
+    const data = [];
+    let allMatches = await getDocs(
+      collection(db, "users", user.uid, "matches")
+    ).then((snapshot) => snapshot.docs.map((doc) => doc.id));
+    const allMatchesUserId = allMatches.length > 0 ? allMatches : ["test"];
+    console.log(allMatchesUserId);
 
+    const q =  query(
+      collection(db, "locket"),
+      where("userId", "in", [...allMatchesUserId,user.uid])
+    );
+    const querySnapshot = await getDocs(q);
+querySnapshot.forEach((doc) => {
+  // doc.data() is never undefined for query doc snapshots
+  data.push(doc.data());
+});
+      data.reverse();
+      console.log(data);
+      setLocketMatches(data);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
   return (
     <SafeAreaView style={tw.style("flex-1 ")}>
       <View style={tw.style("flex-row items-center justify-between px-5")}>
@@ -83,8 +125,8 @@ const PageImage = ({ backPagePress }) => {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate("Chat")}>
-            <Ionicons name="chatbubbles-sharp" size={30} color="#FF5864" />
-          </TouchableOpacity>
+          <Ionicons name="chatbubbles-sharp" size={30} color="#FF5864" />
+        </TouchableOpacity>
       </View>
       <View
         flex={1}
@@ -101,7 +143,7 @@ const PageImage = ({ backPagePress }) => {
           width={widthScreen}
           height={widthScreen}
         >
-          {data.map((item) => (
+          {locketMatches.map((item) => (
             <View
               key={item.id}
               style={{
@@ -119,7 +161,7 @@ const PageImage = ({ backPagePress }) => {
                 }}
               >
                 <Image
-                  source={{ uri: item.image }}
+                  source={{ uri: item.photoURL }}
                   style={{
                     borderRadius: 20,
                     flex: 1,
@@ -137,15 +179,15 @@ const PageImage = ({ backPagePress }) => {
                 justifyContent={"center"}
                 justifyItems={"center"}
               >
-                {item.title && (
+                {item.caption && (
                   <Text className="text-white text-lg font-semibold">
-                    {item.title}
+                    {item.caption}
                   </Text>
                 )}
               </View>
               <View>
                 <Text className="text-white text-2xl font-semibold">
-                  {item.name}
+                  {item.user.displayName}
                 </Text>
               </View>
             </View>
@@ -162,17 +204,17 @@ const PageImage = ({ backPagePress }) => {
             InputRightElement={
               <HStack>
                 <TouchableOpacity pl={2}>
-                  <View  >
+                  <View>
                     <Text style={{ fontSize: 32 }}>❤️</Text>
                   </View>
                 </TouchableOpacity>
                 <TouchableOpacity>
-                  <View pl={1} pr={1} >
+                  <View pl={1} pr={1}>
                     <Text style={{ fontSize: 32 }}>😍</Text>
                   </View>
                 </TouchableOpacity>
                 <TouchableOpacity>
-                  <View  pr={2}>
+                  <View pr={2}>
                     <Text style={{ fontSize: 32 }}>🥵</Text>
                   </View>
                 </TouchableOpacity>

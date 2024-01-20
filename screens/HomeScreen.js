@@ -99,6 +99,16 @@ const HomeScreen = () => {
             userSwiped
           );
 
+          setDoc(
+            doc(db, "users", user.uid, "matches", userSwiped.id),
+            userSwiped
+          );
+
+          setDoc(
+            doc(db, "users", userSwiped.id, "matches", user.uid),
+            loggedInProfile
+          );
+
           setDoc(doc(db, "matches", generateId(user.uid, userSwiped.id)), {
             users: {
               [user.uid]: loggedInProfile,
@@ -107,7 +117,10 @@ const HomeScreen = () => {
             usersMatched: [user.uid, userSwiped.id],
             timestamp: new Date(),
           });
-
+          setDoc(
+            doc(db, "users", user.uid, "matches", userSwiped.id),
+            userSwiped
+          );
           navigation.navigate("Match", {
             loggedInProfile,
             userSwiped,

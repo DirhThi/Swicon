@@ -42,6 +42,7 @@ const heightScreen = Dimensions.get("window").height;
 
 const PageHome = ({ onPressed }) => {
   const navigation = useNavigation();
+  const { loading, setLoading } = useAuth();
   const [hasCameraPermission, setHasCameraPermission] = useState(null);
   const [image, setImage] = useState(null);
   const [base64String, setBase64String] = useState(null);
@@ -106,6 +107,7 @@ const PageHome = ({ onPressed }) => {
   };
 
   const pushLocket = async () => { 
+    setLoading(true);
     const url = await uploadImage();
     console.log(url);
     const loggedInProfile = await (
@@ -113,12 +115,13 @@ const PageHome = ({ onPressed }) => {
     ).data();
     const idlocket = user.uid + new Date();
     setDoc(doc(db, "locket", idlocket), {
+      userId:user.uid,
       user: loggedInProfile,
       photoURL: url,
       caption: caption,
       timestamp: new Date(),
     });
-
+    setLoading(false);
     Toast.show({ description: "Push locket successed !" });
     setImage(null);
   };
@@ -319,6 +322,16 @@ const PageHome = ({ onPressed }) => {
     );
   };
 
+  if (loading) {
+    return (
+      <View style={tw.style("flex-1 justify-center items-center")}>
+        <Text style={tw.style("font-semibold text-red-400 text-2xl")}>
+          Loading....
+        </Text>
+      </View>
+    );
+  }
+  
   return (
     <PaperProvider>
       <SafeAreaView style={tw.style("flex-1 ")}>
