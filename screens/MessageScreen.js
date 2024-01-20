@@ -90,6 +90,39 @@ const MessageScreen = () => {
             keyExtractor={(item) => item.id}
             renderItem={({ item: message }) => {
               if (message.userId === user.uid) {
+                if (message.imagesURL) {
+                  return (
+                    <View>
+                      <Image
+                        source={{ uri: message.imagesURL }}
+                        style={{
+                          marginRight:10,
+                          alignSelf:"flex-end",
+                          borderRadius: 40,
+                          flex: 1,
+                          width: 300,
+                          height: 300,
+                        }}
+                      />
+                      <View
+                        key={message.id}
+                        style={[
+                          tw(
+                            "bg-purple-600 rounded-lg rounded-tr-none px-5 py-3 mx-3 my-3"
+                          ),
+                          {
+                            alignSelf: "flex-start",
+                            marginLeft: "auto",
+                          },
+                        ]}
+                      >
+                        <Text style={tw("font-bold text-white")}>
+                          {message.message}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                }
                 return (
                   <View
                     key={message.id}
@@ -109,6 +142,44 @@ const MessageScreen = () => {
                   </View>
                 );
               } else {
+                if (message.imagesURL) {
+                  return (
+                    <View>
+                      <Image
+                        source={{ uri: message.imagesURL }}
+                        style={{
+                          marginLeft:10,
+                          alignSelf:"flex-start",
+                          borderRadius: 40,
+                          flex: 1,
+                          width: 300,
+                          height: 300,
+                        }}
+                      />
+                       <View
+                    key={message.id}
+                    style={[
+                      tw(
+                        "bg-red-400 rounded-lg rounded-tl-none px-5 py-3 mx-3 my-3"
+                      ),
+                      {
+                        alignSelf: "flex-start",
+                        marginLeft: 55,
+                      },
+                    ]}
+                  >
+                    <Image
+                      source={{ uri: message.photoURL }}
+                      style={[
+                        tw("h-12 w-12 rounded-full absolute top-0"),
+                        { left: -55 },
+                      ]}
+                    />
+                    <Text style={tw("font-bold text-white")}>
+                      {message.message}
+                    </Text>
+                  </View>
+                  </View> )}
                 return (
                   <View
                     key={message.id}

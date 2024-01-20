@@ -9,6 +9,8 @@ import MatchScreen from "./screens/MatchScreen";
 import MessageScreen from "./screens/MessageScreen";
 import UserScreen from "./screens/UserScreen";
 import LocketHome from "./screens/Locket";
+import LoveScreen from "./screens/LoveScreen";
+import SkipScreen from "./screens/SkipScreen";
 
 
 const Stack = createNativeStackNavigator();
@@ -25,6 +27,8 @@ const StackNavigator = () => {
             <Stack.Screen name="Message" component={MessageScreen} />
             <Stack.Screen name="User" component={ UserScreen}/>
             <Stack.Screen name="Locket" component={LocketHome}/>
+            <Stack.Screen name="Love" component={LoveScreen}/>
+            <Stack.Screen name="Skip" component={SkipScreen}/>
 
           </Stack.Group>
           <Stack.Group >

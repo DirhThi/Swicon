@@ -8,7 +8,17 @@ import {
   Pressable,
   TouchableOpacity,
 } from "react-native";
-import { Center, HStack, Input, Modal, ScrollView, View } from "native-base";
+import {
+  Box,
+  Center,
+  HStack,
+  Hidden,
+  Input,
+  Modal,
+  ScrollView,
+  Select,
+  View,
+} from "native-base";
 import { images } from "../../assets/images";
 import PagerView from "react-native-pager-view";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,7 +30,7 @@ import {
   Fontisto,
   Entypo,
 } from "@expo/vector-icons";
-import { useRef, useState,useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { Title } from "react-native-paper";
 const widthScreen = Dimensions.get("window").width;
@@ -38,88 +48,215 @@ import {
   query,
   orderBy,
   setDoc,
+  addDoc,
   where,
 } from "firebase/firestore";
 
-
-const data = [
-  {
-    id: 1,
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/f/fe/Son_Tung_M-TP_1_%282017%29.png",
-
-    title: "it's a beautiful day",
-    name: "vanh",
-  },
-  {
-    id: 2,
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/f/fe/Son_Tung_M-TP_1_%282017%29.png",
-    title: "best image",
-    name: "thanh",
-  },
-  {
-    id: 3,
-    image:
-      "https://scontent.fhan2-3.fna.fbcdn.net/v/t39.30808-6/370371573_987884872435265_3912501485857872186_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=4c1e7d&_nc_ohc=5fmiBAXUEswAX-cH5dH&_nc_ht=scontent.fhan2-3.fna&oh=00_AfCsAYsAbta0_1KAvT5pCgMzTUz1vEcwKA6uLE8Kd3ntUw&oe=65022CCB",
-    title: "best image",
-    name: "hau",
-  },
-  {
-    id: 4,
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/f/fe/Son_Tung_M-TP_1_%282017%29.png",
-    title: "best image",
-    name: "hang",
-  },
-  {
-    id: 5,
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/f/fe/Son_Tung_M-TP_1_%282017%29.png",
-    title: "best image",
-    name: "le",
-  },
-];
-
 const PageImage = ({ backPagePress }) => {
+  const { loading, setLoading } = useAuth();
   const navigation = useNavigation();
   const initialRef = useRef(null);
   const { user } = useAuth();
   const finalRef = useRef(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalFocus, setModalFocus] = useState(false);
+  const [allUserMatches, setAllUserMatches] = useState([]);
+  const [message, setMessage] = useState("");
+  const [currentUserLocket, setCurrentUserLocket] = useState('all');
   const [locketMatches, setLocketMatches] = useState([]);
-  const fetchData = async () => {
+  const [currentPage, setCurrentPage] = useState(-1);
+  const [matchId, setMatchId] = useState("");
+
+
+
+
+  const replyLocket = async () => {
+  
+    if (!message) return;
+    const loggedInProfile = await (
+      await getDoc(doc(db, "users", user.uid))
+    ).data();
+    const data = [];
+    const q = query(
+      collection(db, "matches"),
+    );
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+      // doc.data() is never undefined for query doc snapshots
+      data.push(doc.id);
+    });
+    
+    data.forEach(element => { 
+      const string = element;
+      if(string.includes(user.uid) && string.includes(locketMatches[currentPage].userId) )
+      {
+        setMatchId(string);
+      }
+    });
+    addDoc(collection(db, "matches", matchId, "messages"), {
+      timestamp: new Date(),
+      userId: user.uid,
+      displayName: loggedInProfile.displayName,
+      photoURL: loggedInProfile.photoURL,
+      imagesURL : locketMatches[currentPage].photoURL,
+      message: message,
+    });
+
+    setMessage("");
+  };
+  const fetchDataAllMatches = async (crul) => {
+    const data = [];
+
+    if(crul=="all")
+    {
+      let allMatches = await getDocs(
+        collection(db, "users", user.uid, "matches")
+      ).then((snapshot) => snapshot.docs.map((doc) => doc.id));
+      const allMatchesUserId = allMatches.length > 0 ? allMatches : ["nobody match"];
+      setAllUserMatches(allMatchesUserId);
+  
+      const q = query(
+        collection(db, "locket"),
+        where("userId", "in", [...allMatchesUserId])
+      );
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        // doc.data() is never undefined for query doc snapshots
+        data.push(doc.data());
+      });
+  
+      data.sort((a, b) => b.timestamp - a.timestamp); // Ascending order
+  
+      data.forEach((element) => {
+        const timestampObject = element.timestamp;
+        const milliseconds =
+          timestampObject.seconds * 1000 + timestampObject.nanoseconds / 1000000;
+        const date = new Date(milliseconds).toLocaleString();
+        element.timestamp = date;
+      });
+      setLocketMatches(data);
+    }
+    else if(currentUserLocket=="me")
+    {
+      console.log(user.uid );
+        const q = query(
+          collection(db, "locket"),
+          where("userId", "==",user.uid )
+        );
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+          // doc.data() is never undefined for query doc snapshots
+          data.push(doc.data());
+        });
+    
+        data.sort((a, b) => b.timestamp - a.timestamp); // Ascending order
+    
+        data.forEach((element) => {
+          const timestampObject = element.timestamp;
+          const milliseconds =
+            timestampObject.seconds * 1000 + timestampObject.nanoseconds / 1000000;
+          const date = new Date(milliseconds).toLocaleString();
+          element.timestamp = date;
+        });
+        setLocketMatches(data);
+    }
+    else 
+    {
+      console.log(crul );
+
+        const q = query(
+          collection(db, "locket"),
+          where("userId", "==",crul )
+        );
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+          // doc.data() is never undefined for query doc snapshots
+          data.push(doc.data());
+        });
+    
+        data.sort((a, b) => b.timestamp - a.timestamp); // Ascending order
+    
+        data.forEach((element) => {
+          const timestampObject = element.timestamp;
+          const milliseconds =
+            timestampObject.seconds * 1000 + timestampObject.nanoseconds / 1000000;
+          const date = new Date(milliseconds).toLocaleString();
+          element.timestamp = date;
+        });
+        setLocketMatches(data);
+    }
+    
+  };
+
+  const fetchAllUserMatches = async () => {
     const data = [];
     let allMatches = await getDocs(
       collection(db, "users", user.uid, "matches")
     ).then((snapshot) => snapshot.docs.map((doc) => doc.id));
-    const allMatchesUserId = allMatches.length > 0 ? allMatches : ["test"];
-    console.log(allMatchesUserId);
-
-    const q =  query(
-      collection(db, "locket"),
-      where("userId", "in", [...allMatchesUserId,user.uid])
+    const allMatchesUserId = allMatches.length > 0 ? allMatches : ["nobody match"];
+console.log(allMatchesUserId);
+    const q = query(
+      collection(db, "users"),
+      where("id", "in", [...allMatchesUserId])
     );
     const querySnapshot = await getDocs(q);
-querySnapshot.forEach((doc) => {
-  // doc.data() is never undefined for query doc snapshots
-  data.push(doc.data());
-});
-      data.reverse();
-      console.log(data);
-      setLocketMatches(data);
+    querySnapshot.forEach((doc) => {
+      // doc.data() is never undefined for query doc snapshots
+      data.push(doc.data());
+    });
+
+
+   
+    console.log(data);
+    setAllUserMatches(data);
+
   };
 
   useEffect(() => {
-    fetchData();
+    fetchAllUserMatches(currentUserLocket);
   }, []);
+
+  useEffect(() => {
+    fetchDataAllMatches(currentUserLocket);
+  }, [loading]);
+  useEffect(() => {
+    fetchDataAllMatches(currentUserLocket);
+  }, [currentUserLocket]);
   return (
     <SafeAreaView style={tw.style("flex-1 ")}>
       <View style={tw.style("flex-row items-center justify-between px-5")}>
-        <TouchableOpacity onPress={() => {}}>
+      <Select
+            name="SA"
+            variant="unstyled"
+            fontSize={20}
+            selectedValue={currentUserLocket}
+            ml={-6}
+            textAlign={"center"}
+            onValueChange={(itemValue) =>
+              {
+                console.log(itemValue);
+                setCurrentUserLocket(itemValue);
+              } }
+            justifyContent={"center"}
+            dropdownIcon={false}
+            dropdownCloseIcon={
+              <View >
           <Ionicons name="people-circle-outline" size={34} color="#FF5864" />
-        </TouchableOpacity>
+              </View>
+            }
+            dropdownOpenIcon={
+              <View >
+          <Ionicons name="people-circle-outline" size={34} color="#FF5864" />
+              </View>
+            }
+          >
+            <Select.Item  label="All matches" value="all" />
+            <Select.Item  label="Me" value="me" />
+            {allUserMatches.map((item) => (
+              <Select.Item key={item.id} label={item.displayName} value={item.id} />
+            ))}
+          </Select>
+       
         <TouchableOpacity onPress={() => navigation.navigate("Home")}>
           <FontAwesome5 name="images" size={40} color="#FF5864" />
         </TouchableOpacity>
@@ -137,6 +274,7 @@ querySnapshot.forEach((doc) => {
         {/* top bar */}
 
         <PagerView
+          onPageSelected={e => {setCurrentPage(e.nativeEvent.position)}}
           style={{ flex: 1 }}
           scrollEnabled={true}
           orientation="vertical"
@@ -152,24 +290,42 @@ querySnapshot.forEach((doc) => {
                 justifyContent: "center",
               }}
             >
-              <View
-                style={{
-                  width: widthScreen,
-                  height: widthScreen,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Image
-                  source={{ uri: item.photoURL }}
+              <Box position="relative" overflow="hidden">
+                <View
                   style={{
-                    borderRadius: 20,
-                    flex: 1,
                     width: widthScreen,
                     height: widthScreen,
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
-                />
-              </View>
+                >
+                  <Image
+                    source={{ uri: item.photoURL }}
+                    style={{
+                      borderRadius: 40,
+                      flex: 1,
+                      width: widthScreen,
+                      height: widthScreen,
+                    }}
+                  />
+                </View>
+                <View
+                              bottom={2}
+
+                  w={"full"}
+                  justifyContent={"center"}
+                  alignItems={"center"}
+                  position="absolute"
+                >
+                  <View borderRadius={20} padding={1} bg={"grey"}>
+
+                  <Text style={{color:"white", }} className="text-white text-2xl font-bold">
+                    {item.timestamp}
+                  </Text>
+                  </View>
+
+                </View>
+              </Box>
               <View
                 background={"gray.400"}
                 opacity={80}
@@ -186,7 +342,10 @@ querySnapshot.forEach((doc) => {
                 )}
               </View>
               <View>
-                <Text className="text-white text-2xl font-semibold">
+                <Text
+                  style={{ fontWeight: 600, fontSize: 18 }}
+                  className="text-white text-2xl font-bold"
+                >
                   {item.user.displayName}
                 </Text>
               </View>
@@ -196,7 +355,7 @@ querySnapshot.forEach((doc) => {
 
         {/* bottom bar */}
         <View background={"transparent"} alignItems={"center"} p={4} pb={0}>
-          <Input
+          <Input 
             onPressIn={() => {
               setModalFocus(true);
               setModalVisible(true);
@@ -220,6 +379,7 @@ querySnapshot.forEach((doc) => {
                 </TouchableOpacity>
               </HStack>
             }
+            isDisabled={currentUserLocket=="me" ? true : false}
             borderColor={"#FF5864"}
             editable={false}
             width={"full"}
@@ -229,6 +389,8 @@ querySnapshot.forEach((doc) => {
             h={"12"}
             placeholder="What's on your mind ?"
           />
+          
+         
           <TouchableOpacity onPress={backPagePress}>
             <View
               mt={4}
@@ -268,12 +430,14 @@ querySnapshot.forEach((doc) => {
                 <View w={"full"} justifyContent={"center"}>
                   <Input
                     InputRightElement={
-                      <TouchableOpacity>
+                      <TouchableOpacity onPress={replyLocket}>
                         <View pl={2} pr={2}>
                           <Ionicons name="send" size={30} color="#FF5864" />
                         </View>
                       </TouchableOpacity>
                     }
+                    value={message}
+                    onChangeText={setMessage}
                     borderColor={"#FF5864"}
                     autoFocus={modalFocus}
                     width={"full"}
@@ -283,6 +447,7 @@ querySnapshot.forEach((doc) => {
                     h={"12"}
                     placeholder="What's on your mind ?"
                   />
+                  
                 </View>
               </Modal.Body>
             </Modal.Content>
